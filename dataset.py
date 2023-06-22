@@ -9,6 +9,11 @@ import datetime as dt
 import pandas as pd
 from sqlgsheet import database as db
 
+FIELDS_ADDED = [
+    'volume_kg',
+    'weight_kg',
+    'reps'
+]
 FIELDS = {
     'mydate': 'date',
     'belongsession': 'session',
@@ -44,17 +49,18 @@ def read_logs(logs_path: str) -> pd.DataFrame:
     lifts = pd.read_csv(EXERCISE_LOGS_FILE)
     if len(lifts) > 0:
         lifts = lifts[list(FIELDS.keys())].rename(columns=FIELDS)
-        lifts['volume_kg'], lifts['weight_kg'], lifts['reps'] = zip(*lifts['sets'].map(metrics_from_sets))
-        del lifts['sets']
+        lifts['volume_kg'], lifts['weight_kg'], lifts['reps'], lifts['sets'] = zip(*lifts['sets'].map(metrics_from_sets))
+        lifts = lifts[list(FIELDS.values()) + FIELDS_ADDED]
     return lifts
 
 
 def metrics_from_sets(sets_str):
     sets = [(float(s.split('x')[0]), int(s.split('x')[1])) for s in sets_str.split(',')]
+    set_count = len(sets)
     reps = sum([x[1] for x in sets])
     volume = sum([x[0]*x[1] for x in sets])
     weight = volume/reps
-    return volume, weight, reps
+    return volume, weight, reps, set_count
 
 
 def exercise_logs_extract(logs_path):
